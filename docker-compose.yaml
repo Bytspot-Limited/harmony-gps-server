@@ -4,14 +4,16 @@ services:
   keycloak-db:
     image: postgres:15
     container_name: keycloak-db-server
+    env_file:
+      - ../.env # Referring to the .env file one directory level up
     networks:
       - keycloak-network
     volumes:
       - pg_data:/var/lib/postgresql/data
-    environment:
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+#    environment:
+#      POSTGRES_DB: ${POSTGRES_DB}
+#      POSTGRES_USER: ${POSTGRES_USER}
+#      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
 
     ports:
       - 5000:5432
@@ -19,17 +21,19 @@ services:
   keycloak-server:
     image: quay.io/keycloak/keycloak:22.0.1
     container_name: keycloak-server
+    env_file:
+      - ../.env # Referring to the .env file one directory level up
     command: start-dev
     networks:
       - keycloak-network
-    environment:
-      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN}
-      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
-      DB_VENDOR: ${DB_VENDOR}
-      DB_ADDR: ${DB_ADDR}
-      DB_DATABASE: ${DB_DATABASE}
-      DB_USER: ${DB_USER}
-      DB_PASSWORD: ${DB_PASSWORD}
+#    environment:
+#      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN}
+#      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
+#      DB_VENDOR: ${DB_VENDOR}
+#      DB_ADDR: ${DB_ADDR}
+#      DB_DATABASE: ${DB_DATABASE}
+#      DB_USER: ${DB_USER}
+#      DB_PASSWORD: ${DB_PASSWORD}
     depends_on:
       - keycloak-db
     ports:
