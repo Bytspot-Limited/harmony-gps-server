@@ -1,13 +1,15 @@
 package tech.bytespot.hamonygpsserver.version2;
 
+import java.util.List;
 import lombok.*;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.integration.annotation.ServiceActivator;
 import org.springframework.stereotype.Component;
+import org.springframework.web.reactive.function.BodyInserters;
+import org.springframework.web.reactive.function.client.WebClient;
 import tech.bytespot.hamonygpsserver.version2.utils.CoordinateConverter;
-
-import java.util.ArrayList;
-import java.util.List;
 
 @Slf4j
 @Component
@@ -22,10 +24,29 @@ public class GpsServiceActivator {
     if (dataList.size() > 0) {
       dataList.forEach(
           trackerDeviceData -> {
-            var mappedResponse = mapResponse(trackerDeviceData.getData());
+            var mappedResponse = mapResponse(trackerDeviceData);
+            this.sendToHarmony(mappedResponse);
             log.info("Formatted data: {}", mappedResponse);
           });
     }
+  }
+
+  private void sendToHarmony(GpsData gpsData) {
+    var client =
+        WebClient.builder()
+            .baseUrl("http://localhost:8080/api/gps-coordinates")
+            .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+            .defaultHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE)
+            .build();
+
+    var response =
+        client
+            .post()
+            .bodyValue(gpsData)
+            .retrieve()
+            .bodyToMono(GpsData.class)
+            .block();
+    log.info("GPS coordinates send to harmony successfully: {}", response);
   }
 
   public String hexToAscii(String hexStr) {
@@ -39,10 +60,12 @@ public class GpsServiceActivator {
     return output.toString();
   }
 
-  @Data
-  @Builder
+  @NoArgsConstructor
+  @Setter
   @Getter
+  @ToString
   public static class GpsData {
+    private String deviceId;
     private String time;
     private String status;
     private String latitude;
@@ -60,14 +83,16 @@ public class GpsServiceActivator {
     return List.of(parts);
   }
 
-  private GpsData mapResponse(String data) {
+  private GpsData mapResponse(TrackerDeviceData data) {
     // Convert hexadecimal to ASCII
-    String dataString = this.hexToAscii(data);
+    String dataString = this.hexToAscii(data.getData());
 
     // Convert ASCII string to a String array, to get individual values
     List<String> stringList = this.convertStringToStringArray(dataString);
 
     // Map the collected values to a POJO
+    GpsData gpsData = new GpsData();
+
     if (stringList.size() >= 9) {
 
       String rfid = (stringList.get(18) == null) ? "" : this.convertRfid(stringList.get(18));
@@ -78,19 +103,20 @@ public class GpsServiceActivator {
       StringBuilder longitude = new StringBuilder();
       longitude.append(stringList.get(4)).append(" ").append(stringList.get(5));
 
-      var coordinates = CoordinateConverter.convertCoordinates(latitude.toString(), longitude.toString());
-      return GpsData.builder()
-          .time(stringList.get(0))
-          .status(stringList.get(1))
-          .latitude(String.valueOf(coordinates[0]))
-          .longitude(String.valueOf(coordinates[1]))
-          .speedInKnots(stringList.get(6))
-          .headingDirection(stringList.get(7))
-          .date(stringList.get(8))
-          .rfid(rfid)
-          .build();
+      var coordinates =
+          CoordinateConverter.convertCoordinates(latitude.toString(), longitude.toString());
+      gpsData.setDeviceId(data.getId());
+      gpsData.setTime(stringList.get(0));
+      gpsData.setDate(stringList.get(8));
+      gpsData.setStatus(stringList.get(1));
+      gpsData.setLatitude(String.valueOf(coordinates[0]));
+      gpsData.setLongitude(String.valueOf(coordinates[1]));
+      gpsData.setSpeedInKnots(stringList.get(6));
+      gpsData.setHeadingDirection(stringList.get(7));
+      gpsData.setRfid(rfid);
+      return gpsData;
     }
-    return GpsData.builder().build();
+    return gpsData;
   }
 
   /**
