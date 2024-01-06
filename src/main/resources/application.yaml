@@ -1,5 +1,2 @@
-
-tcp:
-  port: 2000
 server:
-  port: 8000
+  port: -1
