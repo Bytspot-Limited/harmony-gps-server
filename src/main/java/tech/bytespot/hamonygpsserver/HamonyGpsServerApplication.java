@@ -13,7 +13,7 @@ public class HamonyGpsServerApplication {
     SpringApplication.run(HamonyGpsServerApplication.class, args);
   }
 
-  @GetMapping("/hello")
+  @GetMapping("/")
   public String getMessage() {
     return "Hello World!";
   }
