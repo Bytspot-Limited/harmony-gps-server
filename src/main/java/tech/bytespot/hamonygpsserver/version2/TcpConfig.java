@@ -19,7 +19,7 @@ public class TcpConfig {
   @Bean
   public AbstractServerConnectionFactory serverCF() {
     TcpNetServerConnectionFactory scf =
-        new TcpNetServerConnectionFactory(Integer.valueOf(System.getenv("PORT")));
+        new TcpNetServerConnectionFactory(5500);
     scf.setDeserializer(new CustomGpsDeserializer());
     return scf;
   }
