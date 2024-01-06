@@ -1,5 +1,7 @@
 package tech.bytespot.hamonygpsserver.version2;
 
+import static java.lang.System.*;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.integration.annotation.IntegrationComponentScan;
@@ -14,24 +16,24 @@ import org.springframework.messaging.MessageChannel;
 @EnableIntegration
 @IntegrationComponentScan
 public class TcpConfig {
-    @Bean
-    public AbstractServerConnectionFactory serverCF() {
-        TcpNetServerConnectionFactory scf = new TcpNetServerConnectionFactory(5500);
-        scf.setDeserializer(new CustomGpsDeserializer());
-        return scf;
-    }
+  @Bean
+  public AbstractServerConnectionFactory serverCF() {
+    TcpNetServerConnectionFactory scf =
+        new TcpNetServerConnectionFactory(Integer.valueOf(System.getenv("PORT")));
+    scf.setDeserializer(new CustomGpsDeserializer());
+    return scf;
+  }
 
+  @Bean
+  public TcpInboundGateway inbound(AbstractServerConnectionFactory connectionFactory) {
+    TcpInboundGateway inGate = new TcpInboundGateway();
+    inGate.setConnectionFactory(connectionFactory);
+    inGate.setRequestChannel(tcpIn());
+    return inGate;
+  }
 
-    @Bean
-    public TcpInboundGateway inbound(AbstractServerConnectionFactory connectionFactory)  {
-        TcpInboundGateway inGate = new TcpInboundGateway();
-        inGate.setConnectionFactory(connectionFactory);
-        inGate.setRequestChannel(tcpIn());
-        return inGate;
-    }
-
-    @Bean
-    public MessageChannel tcpIn() {
-        return new DirectChannel();
-    }
+  @Bean
+  public MessageChannel tcpIn() {
+    return new DirectChannel();
+  }
 }
