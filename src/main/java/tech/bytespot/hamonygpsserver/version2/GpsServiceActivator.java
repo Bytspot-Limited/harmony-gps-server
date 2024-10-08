@@ -34,7 +34,7 @@ public class GpsServiceActivator {
   private void sendToHarmony(GpsData gpsData) {
     var client =
         WebClient.builder()
-            .baseUrl("https://harmony-api-d3c63c482f2e.herokuapp.com/api/gps-coordinates")
+            .baseUrl("http://localhost:8080/api/gps-coordinates")
             .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
             .defaultHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE)
             .build();
